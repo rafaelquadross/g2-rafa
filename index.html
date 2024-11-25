@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Currículos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    h1, h2 {
+      color: #007BFF;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .menu-buttons button {
+      display: block;
+      margin: 10px auto;
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      background-color: #007BFF;
+      color: white;
+      cursor: pointer;
+      width: 80%;
+    }
+
+    .menu-buttons button:hover {
+      background-color: #0056b3;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      text-align: left;
+      margin-bottom: 5px;
+    }
+
+    input, textarea, select, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    textarea {
+      resize: none;
+    }
+
+    button {
+      background-color: #007BFF;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .curriculo {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      text-align: left;
+    }
+
+    .contador {
+      font-size: 14px;
+      text-align: right;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Sistema de Currículos</h1>
+
+    <!-- Menu Principal -->
+    <div id="menu" class="menu-buttons">
+      <button onclick="listarCurriculos()">1. Listar Currículos</button>
+      <button onclick="mostrarCadastro()">2. Cadastrar Novo Currículo</button>
+      <button onclick="consultarCurriculo()">3. Consultar Currículo</button>
+    </div>
+
+    <!-- Cadastro -->
+    <div id="cadastro" class="hidden">
+      <h2>Cadastro de Novo Currículo</h2>
+      <form id="formCadastro">
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" required oninput="validarNome(event)">
+
+        <label for="telefone">Telefone (opcional):</label>
+        <input type="text" id="telefone" oninput="validarTelefone(event)">
+
+        <label for="email">E-mail:</label>
+        <input type="email" id="email" required>
+
+        <label for="enderecoWeb">Endereço WEB (opcional):</label>
+        <input type="url" id="enderecoWeb">
+
+        <label for="experiencia">Experiência Profissional:</label>
+        <textarea 
+          id="experiencia" 
+          maxlength="999" 
+          required 
+          oninput="atualizarContador(event)"
+          placeholder="Descreva sua experiência profissional (máximo 999 caracteres)."
+        ></textarea>
+        <div class="contador" id="contadorExperiencia">999 caracteres restantes</div>
+
+        <button type="submit">Cadastrar</button>
+      </form>
+      <button onclick="voltarMenu()">Voltar</button>
+    </div>
+
+    <!-- Lista de Currículos -->
+    <div id="listaCurriculos" class="hidden">
+      <h2>Lista de Currículos</h2>
+      <div id="curriculos"></div>
+      <button onclick="voltarMenu()">Voltar</button>
+    </div>
+
+    <!-- Consultar Currículo -->
+    <div id="consultaCurriculo" class="hidden">
+      <h2>Consultar Currículo</h2>
+      <form id="formConsulta">
+        <label for="consultaNome">Selecione o nome:</label>
+        <select id="consultaNome" required></select>
+        <button type="submit">Consultar</button>
+      </form>
+      <div id="resultadoConsulta"></div>
+      <button onclick="voltarMenu()">Voltar</button>
+    </div>
+  </div>
+
+  <script>
+    const curriculos = [];
+
+    // Validar Nome: Somente letras e espaços
+    function validarNome(event) {
+      const input = event.target;
+      input.value = input.value.replace(/[^a-zA-Zà-úÀ-Ú\s]/g, '');
+    }
+
+    // Validar Telefone: Somente números
+    function validarTelefone(event) {
+      const input = event.target;
+      input.value = input.value.replace(/[^0-9]/g, '');
+    }
+
+    // Atualizar contador de caracteres
+    function atualizarContador(event) {
+      const input = event.target;
+      const maxLength = input.getAttribute("maxlength");
+      const restante = maxLength - input.value.length;
+      document.getElementById("contadorExperiencia").textContent = `${restante} caracteres restantes`;
+    }
+
+    // Escapar conteúdo para evitar XSS
+    function escaparHTML(string) {
+      return string
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // Mostrar formulário de cadastro
+    function mostrarCadastro() {
+      document.getElementById("formCadastro").reset();
+      document.getElementById("contadorExperiencia").textContent = "999 caracteres restantes";
+      mostrarSeção("cadastro");
+    }
+
+    // Listar currículos
+    function listarCurriculos() {
+      const lista = document.getElementById("curriculos");
+      lista.innerHTML = "";
+
+      if (curriculos.length === 0) {
+        lista.innerHTML = "<p>Nenhum currículo cadastrado.</p>";
+      } else {
+        curriculos.forEach((curriculo, index) => {
+          const div = document.createElement("div");
+          div.className = "curriculo";
+          div.innerHTML = 
+            `<strong>${index + 1}. Nome:</strong> ${escaparHTML(curriculo.nome)} <br>
+            <strong>E-mail:</strong> ${escaparHTML(curriculo.email)}`;
+          lista.appendChild(div);
+        });
+      }
+
+      mostrarSeção("listaCurriculos");
+    }
+
+    // Consultar currículo
+    function consultarCurriculo() {
+      const consultaNomeSelect = document.getElementById("consultaNome");
+      consultaNomeSelect.innerHTML = "";
+
+      if (curriculos.length === 0) {
+        alert("Nenhum currículo cadastrado para consultar.");
+        voltarMenu();
+        return;
+      }
+
+      curriculos.forEach(curriculo => {
+        const option = document.createElement("option");
+        option.value = curriculo.nome;
+        option.textContent = curriculo.nome;
+        consultaNomeSelect.appendChild(option);
+      });
+
+      mostrarSeção("consultaCurriculo");
+    }
+
+    // Evento de submissão do formulário de consulta
+    document.getElementById("formConsulta").addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const consultaNome = document.getElementById("consultaNome").value;
+      const curriculo = curriculos.find(c => c.nome === consultaNome);
+
+      if (!curriculo) {
+        alert("Currículo não encontrado.");
+        return;
+      }
+
+      const resultadoConsulta = document.getElementById("resultadoConsulta");
+      resultadoConsulta.innerHTML = 
+        `<h3>Detalhes do Currículo</h3>
+        <p><strong>Nome:</strong> ${escaparHTML(curriculo.nome)}</p>
+        <p><strong>Telefone:</strong> ${escaparHTML(curriculo.telefone)}</p>
+        <p><strong>E-mail:</strong> ${escaparHTML(curriculo.email)}</p>
+        <p><strong>Endereço WEB:</strong> ${escaparHTML(curriculo.enderecoWeb)}</p>
+        <p><strong>Experiência Profissional:</strong> ${escaparHTML(curriculo.experiencia)}</p>`;
+    });
+
+    // Voltar ao menu principal
+    function voltarMenu() {
+      mostrarSeção("menu");
+    }
+
+    // Mostrar a seção correta
+    function mostrarSeção(id) {
+      const sections = ["menu", "cadastro", "listaCurriculos", "consultaCurriculo"];
+      sections.forEach(section => document.getElementById(section).classList.add("hidden"));
+      document.getElementById(id).classList.remove("hidden");
+    }
+
+    // Cadastrar novo currículo
+    document.getElementById("formCadastro").addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      const nome = document.getElementById("nome").value;
+      const telefone = document.getElementById("telefone").value || "Não informado";
+      const email = document.getElementById("email").value;
+      const enderecoWeb = document.getElementById("enderecoWeb").value || "Não informado";
+      const experiencia = document.getElementById("experiencia").value;
+
+      const curriculo = {
+        nome,
+        telefone,
+        email,
+        enderecoWeb,
+        experiencia
+      };
+
+      curriculos.push(curriculo);
+
+      alert("Currículo cadastrado com sucesso!");
+      voltarMenu();
+    });
+  </script>
+</body>
+</html>
